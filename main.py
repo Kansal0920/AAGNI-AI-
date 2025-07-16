@@ -19,8 +19,8 @@ logging.basicConfig(
 )
 
 # 📌 Config
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # 🧠 Configure Gemini Flash model
 configure(api_key=GEMINI_API_KEY)
