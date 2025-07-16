@@ -8,6 +8,7 @@ from gtts import gTTS
 import uuid
 from datetime import datetime
 import nest_asyncio
+from dotenv import load_dotenv
 
 # 🧠 Voice playback is skipped on Render (no audio devices)
 IS_RENDER = os.environ.get("RENDER", "false").lower() == "true"
@@ -19,6 +20,7 @@ logging.basicConfig(
 )
 
 # 📌 Config
+load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
