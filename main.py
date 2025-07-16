@@ -59,7 +59,7 @@ def format_response(reply, mode):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_msg = update.message.text
     mode = detect_mode(user_msg)
-    
+
     try:
         gemini_reply = model.generate_content(user_msg).text
         final_reply = format_response(gemini_reply, mode)
@@ -71,14 +71,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.error(error_msg)
         await update.message.reply_text("⚠️ Sorry, something went wrong. Please try again later.")
 
-# Main Bot Application
+# Bot Start Function
 async def main():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    logging.info("🤖 AAGNI is now running 24x7...")
-    await app.run_polling()
+    logging.info("🤖 AAGNI is now alive and polling...")
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling()
+    await app.updater.idle()
 
-# Run safely with nested asyncio
 if __name__ == "__main__":
     nest_asyncio.apply()
-    asyncio.get_event_loop().run_until_complete(main())
+    asyncio.run(main())
