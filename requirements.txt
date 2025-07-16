@@ -4,3 +4,5 @@ gtts
 pygame
 nest_asyncio
 python-dotenv
+python-telegram-bot==20.7
+
