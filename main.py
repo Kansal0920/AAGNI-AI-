@@ -21,7 +21,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 configure(api_key=GEMINI_API_KEY)
 model = GenerativeModel("models/gemini-1.5-flash")
 
-# Try initializing pygame safely (some cloud platforms don’t support audio)
+# Initialize Pygame (skip audio on unsupported platforms)
 try:
     pygame.mixer.init()
 except Exception:
@@ -37,7 +37,7 @@ def speak_text(text, filename="output.mp3"):
     except Exception:
         logging.warning("🎵 Cannot play audio. Skipping...")
 
-# Dynamic Personality
+# Detect personality mode
 def detect_mode(text):
     if "jai shree ram" in text.lower():
         return "devotional"
@@ -46,6 +46,7 @@ def detect_mode(text):
     else:
         return "formal"
 
+# Format reply based on mode
 def format_response(reply, mode):
     if mode == "devotional":
         return f"🚩 Jai Shree Ram Bhakt 🙏\n\n{reply}"
@@ -54,37 +55,30 @@ def format_response(reply, mode):
     else:
         return f"🤖 AAGNI says:\n\n{reply}"
 
-# Message Handler
+# Handle incoming messages
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_message = update.message.text
-    user_id = update.message.from_user.id
-    logging.info(f"Message from {user_id}: {user_message}")
-
-    mode = detect_mode(user_message)
-
+    user_msg = update.message.text
+    mode = detect_mode(user_msg)
+    
     try:
-        gemini_response = model.generate_content(user_message).text
+        gemini_reply = model.generate_content(user_msg).text
+        final_reply = format_response(gemini_reply, mode)
+        await update.message.reply_text(final_reply)
+        speak_text(gemini_reply)
+        logging.info(f"✅ Responded to: {user_msg}")
     except Exception as e:
-        logging.error(f"Gemini API error: {e}")
-        gemini_response = "❌ Sorry, there was an error generating a response."
+        error_msg = f"❌ Gemini API error: {e}"
+        logging.error(error_msg)
+        await update.message.reply_text("⚠️ Sorry, something went wrong. Please try again later.")
 
-    final_reply = format_response(gemini_response, mode)
-    await update.message.reply_text(final_reply)
-
-    # Voice Output (optional in cloud)
-    try:
-        speak_text(gemini_response)
-    except Exception as e:
-        logging.warning(f"Voice failed: {e}")
-
-# Main function
+# Main Bot Application
 async def main():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), handle_message))
-    logging.info("🤖 AAGNI bot started and polling...")
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    logging.info("🤖 AAGNI is now running 24x7...")
     await app.run_polling()
 
-# Entry
+# Run safely with nested asyncio
 if __name__ == "__main__":
     nest_asyncio.apply()
     asyncio.get_event_loop().run_until_complete(main())
