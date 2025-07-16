@@ -9,3 +9,5 @@ __pycache__/
 # Ignore system or editor files
 .DS_Store
 *.swp
+.env
+__pycache__/
