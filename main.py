@@ -1,80 +1,71 @@
 import os
-import asyncio
+import pygame
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, ContextTypes, filters
-from google.generativeai import GenerativeModel, configure
-from gtts import gTTS
-import pygame
 from dotenv import load_dotenv
+import requests
+from gtts import gTTS
 
-
+# Load environment variables
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+MODEL = "openai/gpt-3.5-turbo"
 
-
-configure(api_key=GEMINI_API_KEY)
-model = GenerativeModel("models/gemini-1.5-flash")
-
-
-try:
-    pygame.mixer.init()
-except:
-    print("⚠️ Audio not supported on this platform")
-
+# Setup Pygame for voice output
+pygame.init()
+pygame.mixer.init()
 
 def speak(text):
     tts = gTTS(text=text, lang='en')
     tts.save("voice.mp3")
+    pygame.mixer.music.load("voice.mp3")
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        continue
+
+# Send message to OpenRouter
+def chat_with_openrouter(message):
     try:
-        pygame.mixer.music.load("voice.mp3")
-        pygame.mixer.music.play()
-    except:
-        print("⚠️ Unable to play audio")
+        response = requests.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": MODEL,
+                "messages": [
+                    {"role": "system", "content": "You are AAGNI, a powerful AI assistant like Jarvis."},
+                    {"role": "user", "content": message}
+                ]
+            }
+        )
 
+        data = response.json()
 
+        # Handle possible errors
+        if "choices" not in data:
+            return "❌ AI server not responding."
 
-def get_mode(text):
-    if "jai shree ram" in text.lower():
-        return "devotional"
-    elif "hi" in text.lower() or "bro" in text.lower():
-        return "friendly"
-    else:
-        return "formal"
+        return data["choices"][0]["message"]["content"]
 
+    except Exception as e:
+        return f"❌ AI error: {str(e)}"
 
-def format_reply(text, mode):
-    if mode == "devotional":
-        return "🚩 Jai Shree Ram Bhakt 🙏\n\n" + text
-    elif mode == "friendly":
-        return "😎 Bro here's the reply:\n\n" + text
-    else:
-        return "🤖 AAGNI says:\n\n" + text
-
-
-async def reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# Telegram bot handler
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_message = update.message.text
-    mode = get_mode(user_message)
+    ai_response = chat_with_openrouter(user_message)
+    await update.message.reply_text(ai_response)
+    speak(ai_response)
 
-    # Gemini response
-    response = model.generate_content(user_message)
-    reply_text = response.text
-
-    # Format and reply
-    final_msg = format_reply(reply_text, mode)
-    await update.message.reply_text(final_msg)
-    speak(reply_text)  # speak only raw reply
-
-
-async def main():
-    print("🤖 AAGNI is now running...")
+# Run the bot
+def main():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reply))
-    await app.run_polling()
-    
-if __name__ == "__main__":
-    print("🤖 AAGNI is now running...")
-    import nest_asyncio
-    nest_asyncio.apply()
-    asyncio.get_event_loop().run_until_complete(main())
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    print("✅ AAGNI is live and ready to chat!")
+    app.run_polling()
 
+if __name__ == "__main__":
+    main()

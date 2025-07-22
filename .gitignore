@@ -1,13 +1,4 @@
-# Ignore Python cache & compiled files
-__pycache__/
-*.py[cod]
-*.egg-info/
-
-# Ignore env file with secrets
-.env
-
-# Ignore system or editor files
-.DS_Store
-*.swp
 .env
 __pycache__/
+*.pyc
+vosk_model/
