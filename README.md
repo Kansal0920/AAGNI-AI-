@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Kansal0920/AAGNI-AI-/main/aagni-ai-banner.png" alt="AAGNI-AI Banner">
+  <img src="Aagni_Chatbot_Banner.jpeg" alt="AAGNI-AI Banner">
 
   <h1><b>AAGNI-AI</b></h1>
 
